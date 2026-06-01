@@ -52,3 +52,10 @@ El flujo básico será:
 4. Guardar las métricas.
 5. Crear una API básica.
 6. Probar el funcionamiento inicial.
+
+## Control de versiones
+
+Este proyecto utiliza Git para registrar cambios y GitHub para respaldar el repositorio en la nube.
+
+El uso de commits permite mantener trazabilidad sobre los cambios realizados en el código, la documentación y la estructura del proyecto.
+

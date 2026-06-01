@@ -13,9 +13,12 @@ MODELS_DIR = BASE_DIR / "models"
 TRAIN_DATA = DATA_DIR / "train.csv"
 MODEL_FILE = MODELS_DIR / "modelo_churn.pkl"
 
+
 def entrenar_modelo():
     """
     Entrena un modelo simple de clasificación para predecir churn.
+    Se ha modificado el hiperparámetro 'class_weight' a 'balanced'
+    para manejar el posible desbalance de clases.
     """
 
     if not TRAIN_DATA.exists():
@@ -33,7 +36,14 @@ def entrenar_modelo():
     modelo = Pipeline(
         steps=[
             ("escalado", StandardScaler()),
-            ("clasificador", LogisticRegression())
+            (
+                "clasificador",
+                LogisticRegression(
+                    class_weight="balanced",  # Hiperparámetro modificado
+                    random_state=42,
+                    max_iter=1000,
+                ),
+            ),
         ]
     )
 
@@ -43,6 +53,6 @@ def entrenar_modelo():
     print("Modelo entrenado correctamente.")
     print(f"Modelo guardado en: {MODEL_FILE}")
 
+
 if __name__ == "__main__":
     entrenar_modelo()
-

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
@@ -13,9 +13,11 @@ TEST_DATA = DATA_DIR / "test.csv"
 MODEL_FILE = MODELS_DIR / "modelo_churn.pkl"
 METRICS_FILE = DOCS_DIR / "metricas_modelo.md"
 
+
 def evaluar_modelo():
     """
     Evalúa el modelo entrenado y guarda las métricas principales.
+    Se ha añadido la métrica ROC-AUC.
     """
 
     if not TEST_DATA.exists():
@@ -38,11 +40,13 @@ def evaluar_modelo():
     modelo = joblib.load(MODEL_FILE)
 
     y_pred = modelo.predict(X_test)
+    y_pred_proba = modelo.predict_proba(X_test)[:, 1]  # Probabilidad de la clase positiva
 
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, zero_division=0)
     recall = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
+    roc_auc = roc_auc_score(y_test, y_pred_proba)
 
     contenido = f"""# Métricas del modelo de churn
 
@@ -54,6 +58,7 @@ def evaluar_modelo():
 | Precision | {precision:.4f} |
 | Recall | {recall:.4f} |
 | F1-score | {f1:.4f} |
+| ROC-AUC | {roc_auc:.4f} |
 
 ## Interpretación inicial
 
@@ -63,12 +68,14 @@ Estas métricas permiten evaluar el desempeño inicial del modelo de clasificaci
 - Precision indica qué tan confiables son las predicciones positivas.
 - Recall indica qué proporción de clientes con churn fueron identificados.
 - F1-score resume precision y recall en una sola métrica.
+- ROC-AUC mide la capacidad del modelo para distinguir entre clases positivas y negativas.
 """
 
     METRICS_FILE.write_text(contenido, encoding="utf-8")
 
     print("Modelo evaluado correctamente.")
     print(f"Métricas guardadas en: {METRICS_FILE}")
+
 
 if __name__ == "__main__":
     evaluar_modelo()

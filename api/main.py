@@ -8,11 +8,12 @@ from pydantic import BaseModel
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_FILE = BASE_DIR / "models" / "modelo_churn.pkl"
 
-app = FastAPI(
-    title="API de Predicción de Churn",
-    version="0.1.0",
-    description="API básica para consumir un modelo de Machine Learning."
-)
+# app = FastAPI(
+#     title="API de Predicción de Churn",
+#     version="0.1.0",
+#     description="API básica para consumir un modelo de Machine Learning."
+# )
+app = FastAPI(title="Servicio ML-Ops - Churn-API-Thenier")
 
 class Cliente(BaseModel):
     edad: int
@@ -30,10 +31,17 @@ def cargar_modelo():
 
     return joblib.load(MODEL_FILE)
 
+# @app.get("/")
+# def inicio():
+#     return {
+#         "mensaje": "API de predicción de churn activa"
+#     }
 @app.get("/")
 def inicio():
     return {
-        "mensaje": "API de predicción de churn activa"
+        "mensaje": "Servicio ML-Ops activo",
+        "estado": "ok",
+        "autor": "Joseph Thenier Oyola"
     }
 
 @app.get("/health")
@@ -65,3 +73,4 @@ def predict(cliente: Cliente):
         "churn_predicho": prediccion,
         "probabilidad_churn": probabilidad
     }
+

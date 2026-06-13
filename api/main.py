@@ -1,77 +1,18 @@
-# from pathlib import Path
-
-# import joblib
-# import pandas as pd
-# from fastapi import FastAPI, HTTPException
-# from pydantic import BaseModel
-
-# BASE_DIR = Path(__file__).resolve().parents[1]
-# MODEL_FILE = BASE_DIR / "models" / "modelo_churn.pkl"
-
-# app = FastAPI(title="Servicio ML-Ops - Churn-API-Thenier")
-
-# class Cliente(BaseModel):
-#     edad: int
-#     antiguedad_meses: int
-#     saldo_promedio: float
-#     reclamos: int
-#     usa_app: int
-
-# def cargar_modelo():
-#     """
-#     Carga el modelo entrenado si existe.
-#     """
-#     if not MODEL_FILE.exists():
-#         return None
-
-#     return joblib.load(MODEL_FILE)
-
-# @app.get("/")
-# def inicio():
-#     return {
-#         "mensaje": "Servicio ML-Ops activo",
-#         "estado": "ok",
-#         "autor": "Joseph Thenier Oyola"
-#     }
-
-# @app.get("/health")
-# def health():
-#     return {
-#         "estado": "ok",
-#         "modelo_disponible": MODEL_FILE.exists()
-#     }
-
-# @app.post("/predict")
-# def predict(cliente: Cliente):
-#     modelo = cargar_modelo()
-
-#     if modelo is None:
-#         raise HTTPException(
-#             status_code=503,
-#             detail="El modelo aún no está disponible. Primero se debe entrenar el modelo."
-#         )
-
-#     datos = pd.DataFrame([cliente.model_dump()])
-
-#     prediccion = int(modelo.predict(datos)[0])
-
-#     probabilidad = None
-#     if hasattr(modelo, "predict_proba"):
-#         probabilidad = float(modelo.predict_proba(datos)[0][1])
-
-#     return {
-#         "churn_predicho": prediccion,
-#         "probabilidad_churn": probabilidad
-#     }
-
 """
 API de predicción de churn con FastAPI.
 
 La API carga un modelo serializado, valida los datos de entrada
 y devuelve una predicción junto con su probabilidad.
+Expone endpoints de observabilidad: /info.
 """
 
+import time
+import platform
 from pathlib import Path
+from datetime import datetime
+from collections import deque
+
+from typing import Dict, Any
 
 import joblib
 from fastapi import FastAPI, HTTPException
@@ -82,6 +23,40 @@ MODEL_PATH = PROJECT_ROOT / "models" / "modelo_churn_v1.joblib"
 
 VERSION_MODELO = "modelo_churn_v1"
 AUTOR = "Joseph Thenier Oyola"
+SERVICE_NAME = "churn-prediction-service"
+ENVIRONMENT = "development"  # Cambiar a production/staging según despliegue
+API_VERSION = "1.0.0"
+
+# Intento de obtener el commit SHA desde Git (opcional)
+def get_git_commit_sha() -> str:
+    git_dir = PROJECT_ROOT / ".git"
+    if not git_dir.exists():
+        return "unknown"
+    head_path = git_dir / "HEAD"
+    if not head_path.exists():
+        return "unknown"
+    with open(head_path, "r") as f:
+        head_content = f.read().strip()
+    if head_content.startswith("ref: "):
+        ref_path = git_dir / head_content[5:]
+        if ref_path.exists():
+            with open(ref_path, "r") as f:
+                return f.read().strip()[:7]
+    return head_content[:7]
+
+GIT_COMMIT_SHA = get_git_commit_sha()
+
+# Timestamp de inicio del servicio
+START_TIME = datetime.now()
+START_TIMESTAMP = START_TIME.isoformat()
+
+# Dependencias (simplificado - solo verifica que el modelo existe)
+def check_dependencies_status() -> Dict[str, str]:
+    return {
+        "model_storage": "ok" if MODEL_PATH.exists() else "failed",
+        "database": "not_configured",  # En producción se conectaría a una DB real
+        "feature_store": "not_applicable"
+    }
 
 if not MODEL_PATH.exists():
     raise RuntimeError(
@@ -90,7 +65,9 @@ if not MODEL_PATH.exists():
     )
 
 modelo = joblib.load(MODEL_PATH)
+DEPLOYMENT_TIME = datetime.now().isoformat()
 
+# ---------- Clases Pydantic ----------
 class ClienteEntrada(BaseModel):
     antiguedad: int = Field(
         ...,
@@ -120,18 +97,20 @@ class PrediccionSalida(BaseModel):
     version_modelo: str
     autor: str
 
+# ---------- FastAPI app ----------
 app = FastAPI(
     title="API de predicción de churn",
     description="Servicio académico ML-Ops para estimar riesgo de abandono.",
-    version="1.0.0",
+    version=API_VERSION,
 )
 
+# ---------- Endpoints básicos ----------
 @app.get("/")
 def inicio() -> dict[str, str]:
     return {
         "mensaje": "Servicio ML-Ops activo",
         "estado": "ok",
-        "autor": "Joseph Thenier Oyola",
+        "autor": AUTOR,
     }
 
 @app.get("/health")
@@ -141,6 +120,23 @@ def health() -> dict[str, str]:
         "modelo": VERSION_MODELO,
     }
 
+# ---------- Nuevo endpoint de información ----------
+@app.get("/info")
+def info() -> dict[str, Any]:
+    """Información del sistema y metadata del despliegue."""
+    uptime_seconds = (datetime.now() - START_TIME).total_seconds()
+    return {
+        "author": AUTOR,
+        "service_name": SERVICE_NAME,
+        "environment": ENVIRONMENT,
+        "api_version": API_VERSION,
+        "uptime_seconds": round(uptime_seconds, 2),
+        "current_server_time": datetime.now().isoformat(),
+        "git_commit_sha": GIT_COMMIT_SHA,
+        "dependencies": check_dependencies_status(),
+    }
+
+# ---------- Endpoint de predicción ----------
 @app.post("/predict", response_model=PrediccionSalida)
 def predict(datos: ClienteEntrada) -> PrediccionSalida:
     try:

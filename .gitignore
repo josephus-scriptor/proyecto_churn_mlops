@@ -1,23 +1,52 @@
 # Entornos virtuales
 .venv/
 venv/
+env/
+ENV/
 
-# Caché de Python
+# Cachés de Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-
-# Configuración local
-.env
-.vscode/
-
-# Archivos generados por ejecución
-data/*.csv
-models/*.pkl
-
-# Caché de pruebas
+*.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Archivos del sistema operativo
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Credenciales y datos sensibles
+.env
+.env.*
+*.key
+*.pem
+*.crt
+secrets/
+credentials.json
+*.secret
+
+# Datos (evitar subir CSVs grandes o con información real)
+data/*.csv
+data/*.xlsx
+models/*.pkl
+models/*.joblib
+!models/.gitkeep
+
+# Archivos de sistema operativo
 .DS_Store
 Thumbs.db
+desktop.ini
+ehthumbs.db
+*.swp
+*.swo
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*

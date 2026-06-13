@@ -1,11 +1,3 @@
-# pandas
-# scikit-learn
-# joblib
-# fastapi
-# uvicorn
-# pytest
-# httpx
-
 fastapi[standard] 
 numpy
 pandas

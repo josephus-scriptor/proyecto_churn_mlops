@@ -122,7 +122,7 @@ Si desea observar cómo la API maneja valores atípicos y cómo se refleja en la
 
 Ejecute:
 ```bash
-python tests/enviar_drift_api.py
+docker exec -it churn-api-thenier python tests/enviar_drift_api.py
 ```
 Resultado esperado (extracto):
 ```text

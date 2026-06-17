@@ -157,5 +157,5 @@ Para conocer el resto de los valores revisar el reporte [Metricas](http://127.0.
 | Eliminar el contenedor anterior si existe | `docker rm -f churn-api-thenier`         |
 | Ejecutar un contenedor nuevo              | `docker run -d --name churn-api-thenier -p 127.0.0.1:8008:8008 churn-api-thenier`|
 | Verificar el contenedor                   | `docker ps`|
-| Simular tráfico con drift                 | `python tests/enviar_drift_api.py`       |
+| Simular tráfico con drift                 | `docker exec -it churn-api-thenier python tests/enviar_drift_api.py` |
 

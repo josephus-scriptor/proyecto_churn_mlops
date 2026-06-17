@@ -48,6 +48,15 @@ def evaluar_modelo():
     f1 = f1_score(y_test, y_pred, zero_division=0)
     roc_auc = roc_auc_score(y_test, y_pred_proba)
 
+    # Detección de drift (opcional)
+    try:
+        from .drift_detector import reporte_drift_completo
+        print("\nEjecutando detección de drift entre entrenamiento y prueba...")
+        resultado_drift = reporte_drift_completo(TEST_DATA)
+        # Opcional: guardar reporte en docs/drift_report.md
+    except Exception as e:
+        print(f"No se pudo completar el análisis de drift: {e}")
+
     contenido = f"""# Métricas del modelo de churn
 
 ## Resultados principales

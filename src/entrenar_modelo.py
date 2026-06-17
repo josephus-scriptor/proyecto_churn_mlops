@@ -1,62 +1,3 @@
-# from pathlib import Path
-
-# import joblib
-# import pandas as pd
-# from sklearn.linear_model import LogisticRegression
-# from sklearn.pipeline import Pipeline
-# from sklearn.preprocessing import StandardScaler
-
-# BASE_DIR = Path(__file__).resolve().parents[1]
-# DATA_DIR = BASE_DIR / "data"
-# MODELS_DIR = BASE_DIR / "models"
-
-# TRAIN_DATA = DATA_DIR / "train.csv"
-# MODEL_FILE = MODELS_DIR / "modelo_churn.pkl"
-
-
-# def entrenar_modelo():
-#     """
-#     Entrena un modelo simple de clasificación para predecir churn.
-#     Se ha modificado el hiperparámetro 'class_weight' a 'balanced'
-#     para manejar el posible desbalance de clases.
-#     """
-
-#     if not TRAIN_DATA.exists():
-#         raise FileNotFoundError(
-#             "No se encontró data/train.csv. Primero ejecuta src/preparar_datos.py"
-#         )
-
-#     MODELS_DIR.mkdir(exist_ok=True)
-
-#     df = pd.read_csv(TRAIN_DATA)
-
-#     X = df.drop(columns=["churn"])
-#     y = df["churn"]
-
-#     modelo = Pipeline(
-#         steps=[
-#             ("escalado", StandardScaler()),
-#             (
-#                 "clasificador",
-#                 LogisticRegression(
-#                     class_weight="balanced",  # Hiperparámetro modificado
-#                     random_state=42,
-#                     max_iter=1000,
-#                 ),
-#             ),
-#         ]
-#     )
-
-#     modelo.fit(X, y)
-#     joblib.dump(modelo, MODEL_FILE)
-
-#     print("Modelo entrenado correctamente.")
-#     print(f"Modelo guardado en: {MODEL_FILE}")
-
-
-# if __name__ == "__main__":
-#     entrenar_modelo()
-
 """
 Entrenamiento de un modelo académico de predicción de churn.
 
@@ -75,6 +16,9 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+# Para el drift
+import pandas as pd
+import logging
 
 # Rutas robustas basadas en la ubicación del archivo actual
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -84,6 +28,9 @@ DOCS_DIR = PROJECT_ROOT / "docs"
 MODEL_PATH = MODELS_DIR / "modelo_churn_v1.joblib"
 METADATA_PATH = MODELS_DIR / "modelo_churn_v1_metadata.json"
 METRICS_PATH = DOCS_DIR / "metricas_modelo.md"
+
+# Para el drift
+DATA_DIR = PROJECT_ROOT / "data"
 
 def generar_datos_sinteticos(n_registros: int = 800) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -130,6 +77,14 @@ def entrenar_y_guardar_modelo() -> None:
         random_state=42,
         stratify=y,
     )
+
+    # Guardar referencia para detección de drift
+    df_train_ref = pd.DataFrame(X_train, columns=["antiguedad", "cargo_mensual", "reclamos"])
+    df_train_ref["churn"] = y_train
+    REF_TRAIN_PATH = DATA_DIR / "reference_training_data.csv"
+    df_train_ref.to_csv(REF_TRAIN_PATH, index=False)
+    logger = logging.getLogger("fastapi")
+    logger.info(f"Referencia de entrenamiento guardada en {REF_TRAIN_PATH}")
 
     modelo = Pipeline(
         steps=[
